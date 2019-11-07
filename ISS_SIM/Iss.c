@@ -66,9 +66,9 @@ int main(int argc, char *argv[]) {
 		
 		//exectute command
 		if (vals[1] == ADD)
-			add(vals, dst, src0, src1);/*
+			add(vals, dst, src0, src1);
 		else if (vals[1] == SUB)
-			sub(vals, rd, rs, rt, imm);
+			sub(vals, rd, rs, rt, imm);/*
 		else if (vals[1] == LSF)
 			and (vals, rd, rs, rt, imm);
 		else if (vals[1] == RSF)
