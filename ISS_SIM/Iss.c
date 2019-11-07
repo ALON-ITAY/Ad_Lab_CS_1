@@ -219,7 +219,18 @@ void sub(long int vals[], int dst, int src0, int src1) {
 	}
 	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] - vals[src1 + REGS_OFFSET_IN_VALS];
 }
-
+void and(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] & vals[src1 + REGS_OFFSET_IN_VALS];
+}
+void or(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] | vals[src1 + REGS_OFFSET_IN_VALS];
+}
 
 
 /** print_to_files
