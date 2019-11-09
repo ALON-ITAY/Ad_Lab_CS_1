@@ -26,7 +26,7 @@
 
 void alloc_mem(char ***output_arr);
 void memin_to_outArr(FILE *memin_p, char ***output_arr);
-void get_command_values(int *dst, int *src0, int *src1, int *imm, char **output_arr, int pc);
+void get_command_values(int *dst, int *src0, int *src1, long int **vals, char **output_arr, int pc);
 void add(long int vals[], int dst, int src0, int src1);
 void sub(long int vals[], int dst, int src0, int src1);
 void print_to_files(FILE *memout_p, char **output_arr, long int *vals);
@@ -54,14 +54,15 @@ int main(int argc, char *argv[]) {
 
 	while (1) {
 		pc = vals[0];
-		vals[1] = (long int)strtoul(output_arr[pc], NULL, 16);// vals[1] is hex encoding of the current command.
+		get_command_values(&dst, &src0, &src1, &vals, output_arr, pc);// get curr command feilds values.
+
 		if (fprintf(trace_p, "%08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X\n",
 			vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9],
 			vals[10], vals[11], vals[12], vals[13],	vals[14]) < 0) {	// print trace values
 			printf("Error: failed writing to file 'trace.txt'. \n");
 		}
-		get_command_values(&dst, &src0, &src1, &imm, output_arr, pc);// get curr command feilds values.
-		vals[6] = imm; //copy value of immidiate to vals array (to the position of reg1)
+		
+		
 
 		
 		//exectute command
@@ -168,18 +169,29 @@ void memin_to_outArr(FILE *memin_p, char ***output_arr) {
 
  * @return - void.
  */
-void get_command_values(int *dst, int *src0, int *src1, int *imm, char **output_arr, int pc) {
-	char dst_str[] = "0", src0_str[] = "0", src1_str[] = "0", imm_str[] = "000";
+void get_command_values(int *dst, int *src0, int *src1, long int **vals, char **output_arr, int pc) {
+	int curr_instruction;
 
-	dst_str[0] = output_arr[pc][1]; // copy dst part from command string
-	src0_str[0] = output_arr[pc][2]; // copy src0 part from command string
-	src1_str[0] = output_arr[pc][3]; // copy src1 part from command string
-	strncpy(imm_str, output_arr[pc] + 5, 3); // copy imm part from command string
-	*dst = (long int)strtoul(dst_str, NULL, 16);
-	*src0 = (long int)strtoul(src0_str, NULL, 16);
-	*src1 = (long int)strtoul(src1_str, NULL, 16);
-	*imm = (long int)strtoul(imm_str, NULL, 16);
+	//convert instruction from memory to hex
+	curr_instruction = strtoul(output_arr[pc], NULL, 16);// vals[1] is hex encoding of the current instruction.
+	(*vals)[1] = (long int)curr_instruction;// vals[1] is hex encoding of the current instruction.
 
+	//extract opcode
+	(*vals)[2] = curr_instruction & 0x3E000000;
+	(*vals)[2] = (*vals)[2] >> 0x19;
+	//extract dst
+	*dst = curr_instruction & 0x01c00000;
+	*dst = *dst >> 0x16;
+	//extract src0
+	*src0 = curr_instruction & 0x00380000;
+	*src0 = *src0 >> 0x13;
+	//extract src1
+	*src1 = curr_instruction & 0x00070000;
+	*src1 = *src1 >> 0x10;
+	//extract immediate
+	(*vals)[6] = curr_instruction & 0x0000ffff; //copy value of immidiate to it's position in vals array
+
+	//adjust register offset in case of using immediate
 	if (*src0 == 1) { *src0 = -1; } //correct the register offset to be the immidiate offset in "vals" array
 	if (*src1 == 1) { *src1 = -1; } //correct the register offset to be the immidiate offset in "vals" array
 }
