@@ -26,7 +26,7 @@
 
 void alloc_mem(char ***output_arr);
 void memin_to_outArr(FILE *memin_p, char ***output_arr);
-void get_command_values(int *dst, int *src0, int *src1, long int **vals, char **output_arr, int pc);
+void get_command_values(int *dst, int *src0, int *src1, long int vals, char output_arr, int pc);
 void add(long int vals[], int dst, int src0, int src1);
 void sub(long int vals[], int dst, int src0, int src1);
 void print_to_files(FILE *memout_p, char **output_arr, long int *vals);
@@ -54,50 +54,47 @@ int main(int argc, char *argv[]) {
 
 	while (1) {
 		pc = vals[0];
-		get_command_values(&dst, &src0, &src1, &vals, output_arr, pc);// get curr command feilds values.
+  get_command_values(&dst, &src0, &src1, &vals, output_arr, pc);// get curr command feilds values.
 
-		if (fprintf(trace_p, "%08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X\n",
-			vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9],
-			vals[10], vals[11], vals[12], vals[13],	vals[14]) < 0) {	// print trace values
-			printf("Error: failed writing to file 'trace.txt'. \n");
-		}
-		
-		
-
-		
+  if (fprintf(trace_p, "%08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X\n",
+   vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9],
+   vals[10], vals[11], vals[12], vals[13], vals[14]) < 0) { // print trace values
+   printf("Error: failed writing to file 'trace.txt'. \n");
+  }
 		//exectute command
 		if (vals[1] == ADD)
-			add(vals, dst, src0, src1);/*
+			add(vals, dst, src0, src1);
 		else if (vals[1] == SUB)
-			sub(vals, rd, rs, rt, imm);
+			sub(vals, dst, src0, src1);
 		else if (vals[1] == LSF)
-			and (vals, rd, rs, rt, imm);
+			lsf (vals, dst, src0, src1);
 		else if (vals[1] == RSF)
-			or (vals, rd, rs, rt, imm);
+			rsf (vals, dst, src0, src1);
 		else if (vals[1] == AND)
-			sll(vals, rd, rs, rt, imm);
+			and(vals, dst, src0, src1);
 		else if (vals[1] == OR)
-			sra(vals, rd, rs, rt, imm);
+			or(vals, dst, src0, src1);
 		else if (vals[1] == XOR)
-			mac(vals, rd, rs, rt, rm, imm);
+			xor(vals, dst, src0, src1);
 		else if (vals[1] ==LHI)
-			branch(rs, rt, rm, imm, &memout_p, vals);
-		//8,9,A(10) are reserved commands
+			lhi(vals, dst, src0, src1);/*
 		else if (vals[1] == LD)
 			jal(imm, &memout_p, vals);
 		else if (vals[1] == ST)
-			lw(rd, rs, imm, &output_arr, vals);
+			lw(rd, rs, imm, &output_arr, vals);*/
 		else if (vals[1] == JLT)
-			sw(rd, rs, imm, &output_arr, vals);
+			jlt(vals, dst, src0, src1);
 		else if (vals[1] == JLE)
-			jr(rd, vals);
+			jle(vals, dst, src0, src1);
+		else if (vals[1] == JEQ)
+			jeq(vals, dst, src0, src1);
 		else if (vals[1] == JNE)
-			jr(rd, vals);
+			jne(vals, dst, src0, src1);
 		else if (vals[1] == JIN)
-			jr(rd, vals);
+			jin(vals, dst, src0, src1);
 		else if (vals[1] == HLT)
 			break;	//halt	
-		vals[0]++;	//pc++; */
+		vals[0]++;	//pc++; 
 	}
 
 	print_to_files(memout_p, output_arr, vals);
@@ -169,33 +166,32 @@ void memin_to_outArr(FILE *memin_p, char ***output_arr) {
 
  * @return - void.
  */
-void get_command_values(int *dst, int *src0, int *src1, long int **vals, char **output_arr, int pc) {
-	int curr_instruction;
+void get_command_values(int *dst, int *src0, int *src1, long int vals, char output_arr, int pc) {
+ int curr_instruction;
 
-	//convert instruction from memory to hex
-	curr_instruction = strtoul(output_arr[pc], NULL, 16);// vals[1] is hex encoding of the current instruction.
-	(*vals)[1] = (long int)curr_instruction;// vals[1] is hex encoding of the current instruction.
+ //convert instruction from memory to hex
+ curr_instruction = strtoul(output_arr[pc], NULL, 16);// vals[1] is hex encoding of the current instruction.
+ (*vals)[1] = (long int)curr_instruction;// vals[1] is hex encoding of the current instruction.
 
-	//extract opcode
-	(*vals)[2] = curr_instruction & 0x3E000000;
-	(*vals)[2] = (*vals)[2] >> 0x19;
-	//extract dst
-	*dst = curr_instruction & 0x01c00000;
-	*dst = *dst >> 0x16;
-	//extract src0
-	*src0 = curr_instruction & 0x00380000;
-	*src0 = *src0 >> 0x13;
-	//extract src1
-	*src1 = curr_instruction & 0x00070000;
-	*src1 = *src1 >> 0x10;
-	//extract immediate
-	(*vals)[6] = curr_instruction & 0x0000ffff; //copy value of immidiate to it's position in vals array
+ //extract opcode
+ (*vals)[2] = curr_instruction & 0x3E000000;
+ (*vals)[2] = (*vals)[2] >> 0x19;
+ //extract dst
+ *dst = curr_instruction & 0x01c00000;
+ *dst = *dst >> 0x16;
+ //extract src0
+ *src0 = curr_instruction & 0x00380000;
+ *src0 = *src0 >> 0x13;
+ //extract src1
+ *src1 = curr_instruction & 0x00070000;
+ *src1 = *src1 >> 0x10;
+ //extract immediate
+ (*vals)[6] = curr_instruction & 0x0000ffff; //copy value of immidiate to it's position in vals array
 
-	//adjust register offset in case of using immediate
-	if (*src0 == 1) { *src0 = -1; } //correct the register offset to be the immidiate offset in "vals" array
-	if (*src1 == 1) { *src1 = -1; } //correct the register offset to be the immidiate offset in "vals" array
+ //adjust register offset in case of using immediate
+ if (*src0 == 1) { *src0 = -1; } //correct the register offset to be the immidiate offset in "vals" array
+ if (*src1 == 1) { *src1 = -1; } //correct the register offset to be the immidiate offset in "vals" array
 }
-
 
 /** add
  * -----
@@ -231,8 +227,195 @@ void sub(long int vals[], int dst, int src0, int src1) {
 	}
 	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] - vals[src1 + REGS_OFFSET_IN_VALS];
 }
-
-
+/** LSF
+ * -----
+ * Computes left shift of src0 of src1 places.
+ *
+ * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void lsf(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] << vals[src1 + REGS_OFFSET_IN_VALS];
+}
+/** RSF
+ * -----
+ * Computes right shift of src1 of src0 places.
+ *
+ * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void rsf(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] >> vals[src1 + REGS_OFFSET_IN_VALS];
+}
+/** and
+ * -----
+ * Computes bitwise and of two integers and a constant.
+ *
+ * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void and(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] & vals[src1 + REGS_OFFSET_IN_VALS];
+}
+/** or
+ * -----
+ * Computes bitwise or of two integers and a constant.
+ *
+ * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void or(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] | vals[src1 + REGS_OFFSET_IN_VALS];
+}
+/** xor
+ * -----
+ * Computes bitwise xor of two integers and a constant.
+ *
+ * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void xor(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] ^ vals[src1 + REGS_OFFSET_IN_VALS];
+}
+/** LHI
+ * -----
+ * Computes bitwise xor of two integers and a constant.
+ *
+ * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void lhi(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	vals[dst + REGS_OFFSET_IN_VALS] = (vals[dst + REGS_OFFSET_IN_VALS]& 0x0000ffff)|((vals[src0 + REGS_OFFSET_IN_VALS] | vals[src1 + REGS_OFFSET_IN_VALS])<<0x10);
+}
+/** JLT
+ * -----
+ * Computes left shift of src0 of src1 places.
+ *
+ * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void jlt(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	if(vals[src0 + REGS_OFFSET_IN_VALS] < vals[src1 + REGS_OFFSET_IN_VALS]){
+	vals[7 + REGS_OFFSET_IN_VALS]=vals[0]
+	vals[0] = (vals[imm + REGS_OFFSET_IN_VALS] & 65535)-1;
+	}
+}
+/** JLE
+ * -----
+ * Computes right shift of src1 of src0 places.
+ *
+ * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void jle(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	if(vals[src0 + REGS_OFFSET_IN_VALS] <= vals[src1 + REGS_OFFSET_IN_VALS]){
+	vals[7 + REGS_OFFSET_IN_VALS]=vals[0]
+	vals[0] = (vals[imm + REGS_OFFSET_IN_VALS] & 65535)-1;
+	}
+}
+/** JEQ
+ * -----
+ * Computes bitwise and of two integers and a constant.
+ *
+ * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void jeq(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	if(vals[src0 + REGS_OFFSET_IN_VALS] == vals[src1 + REGS_OFFSET_IN_VALS]){
+	vals[7 + REGS_OFFSET_IN_VALS]=vals[0]
+	vals[0] = (vals[imm + REGS_OFFSET_IN_VALS] & 65535)-1;
+	}
+}
+/** JNE
+ * -----
+ * Computes bitwise and of two integers and a constant.
+ *
+ * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void jne(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	if(vals[src0 + REGS_OFFSET_IN_VALS] != vals[src1 + REGS_OFFSET_IN_VALS]){
+	vals[7 + REGS_OFFSET_IN_VALS]=vals[0]
+	vals[0] = (vals[imm + REGS_OFFSET_IN_VALS] & 65535)-1;
+	}
+}
+/** JIN
+ * -----
+ * Computes bitwise and of two integers and a constant.
+ *
+ * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void jin(long int vals[], int dst, int src0, int src1) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	vals[7 + REGS_OFFSET_IN_VALS]=vals[0]
+	vals[0] = vals[src0 + REGS_OFFSET_IN_VALS]
+}
 
 /** print_to_files
  * ----------------
