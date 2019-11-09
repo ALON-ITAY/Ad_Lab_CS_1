@@ -1,6 +1,7 @@
 #define MAX_NUM_OF_LINES 4096
 #define COMMAND_LEN 8
 #define REGS_OFFSET_IN_VALS 7
+#define IMM_OFFSET_IN_VALS 6
 #define ADD 0
 #define SUB 1
 #define LSF 2
@@ -24,22 +25,35 @@
 #include <string.h>
 #include <assert.h>
 
-void alloc_mem(char ***output_arr);
-void memin_to_outArr(FILE *memin_p, char ***output_arr);
-void get_command_values(int *dst, int *src0, int *src1, long int vals, char output_arr, int pc);
+int main(int argc, char * argv[]);
+
+//void alloc_mem(char ***output_arr);
+void memin_to_outArr(FILE *memin_p, long int **output_arr);
+void get_command_values(int *dst, int *src0, int *src1, int **vals, long int *output_arr, int pc);
+void print_trace(long int *vals, FILE *trace_p, int dst, int src0, int src1);
 void add(long int vals[], int dst, int src0, int src1);
 void sub(long int vals[], int dst, int src0, int src1);
-void print_to_files(FILE *memout_p, char **output_arr, long int *vals);
-void free_mem(char ***output_arr);
+void and(long int vals[], int dst, int src0, int src1);
+void or (long int vals[], int dst, int src0, int src1);
+void xor(long int vals[], int dst, int src0, int src1);
+void jeq(long int vals[], int dst, int src0, int src1);
+void jin(long int vals[], int dst, int src0, int src1);
+void jlt(long int vals[], int dst, int src0, int src1);
+void jle(long int vals[], int dst, int src0, int src1);
+void jne(long int vals[], int dst, int src0, int src1);
+void lhi(long int vals[], int dst, int src0, int src1);
+void lsf(long int vals[], int dst, int src0, int src1);
+void rsf(long int vals[], int dst, int src0, int src1);
+
+void print_to_files(FILE *memout_p, long int *output_arr, int *vals);
+void free_mem(long int **output_arr, long int **vals);
 
 int main(int argc, char *argv[]) {
 
 	FILE *memin_p = NULL, *memout_p = NULL, *trace_p = NULL; //file pointers
-	char **output_arr; //array of memout values line by line
-	long int vals[] = { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
-		0x00000000, 0x00000000, 0x00000000,	0x00000000 ,0x00000000, 0x00000000,	0x00000000,	0x00000000,
-		0x00000000}; // initialze hex array for values of: pc, instruction, opcode, dst, src0, src1, immediate, registers.
-	long int dst, src0, src1, imm; //command feilds
+	long int *output_arr = (long int*) calloc(MAX_NUM_OF_LINES, sizeof(long int)); //array of memout values line by line
+	long int *vals = (long int*) calloc(15, sizeof(long int));// initialze hex array for values of: pc, instruction, opcode, dst, src0, src1, immediate, registers.
+	int dst, src0, src1, imm; //command feilds
 	int i = 0, pc = 0;
 
 
@@ -49,50 +63,45 @@ int main(int argc, char *argv[]) {
 	if ((memin_p = fopen(argv[1], "r")) == NULL || (memout_p = fopen("sram_out.txt", "w")) == NULL
 		 || (trace_p = fopen("trace.txt", "w")) == NULL ){	printf("Error: failed opening file. \n");}
 
-	alloc_mem(&output_arr); //alocate space for output array
+	//alloc_mem(&output_arr); //alocate space for output array
 	memin_to_outArr(memin_p, &output_arr); //copy contents of memin to memout_arr
 
 	while (1) {
 		pc = vals[0];
-  get_command_values(&dst, &src0, &src1, &vals, output_arr, pc);// get curr command feilds values.
-
-  if (fprintf(trace_p, "%08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X\n",
-   vals[0], vals[1], vals[2], vals[3], vals[4], vals[5], vals[6], vals[7], vals[8], vals[9],
-   vals[10], vals[11], vals[12], vals[13], vals[14]) < 0) { // print trace values
-   printf("Error: failed writing to file 'trace.txt'. \n");
-  }
+		get_command_values(&dst, &src0, &src1, &vals, output_arr, pc);// get curr command feilds values.
+		print_trace(vals, trace_p, dst, src0, src1);
 		//exectute command
-		if (vals[1] == ADD)
+		if (vals[2] == ADD)
 			add(vals, dst, src0, src1);
-		else if (vals[1] == SUB)
+		else if (vals[2] == SUB)
 			sub(vals, dst, src0, src1);
-		else if (vals[1] == LSF)
+		else if (vals[2] == LSF)
 			lsf (vals, dst, src0, src1);
-		else if (vals[1] == RSF)
+		else if (vals[2] == RSF)
 			rsf (vals, dst, src0, src1);
-		else if (vals[1] == AND)
+		else if (vals[2] == AND)
 			and(vals, dst, src0, src1);
-		else if (vals[1] == OR)
+		else if (vals[2] == OR)
 			or(vals, dst, src0, src1);
-		else if (vals[1] == XOR)
+		else if (vals[2] == XOR)
 			xor(vals, dst, src0, src1);
-		else if (vals[1] ==LHI)
+		else if (vals[2] ==LHI)
 			lhi(vals, dst, src0, src1);/*
-		else if (vals[1] == LD)
+		else if (vals[2] == LD)
 			jal(imm, &memout_p, vals);
-		else if (vals[1] == ST)
+		else if (vals[2] == ST)
 			lw(rd, rs, imm, &output_arr, vals);*/
-		else if (vals[1] == JLT)
+		else if (vals[2] == JLT)
 			jlt(vals, dst, src0, src1);
-		else if (vals[1] == JLE)
+		else if (vals[2] == JLE)
 			jle(vals, dst, src0, src1);
-		else if (vals[1] == JEQ)
+		else if (vals[2] == JEQ)
 			jeq(vals, dst, src0, src1);
-		else if (vals[1] == JNE)
+		else if (vals[2] == JNE)
 			jne(vals, dst, src0, src1);
-		else if (vals[1] == JIN)
+		else if (vals[2] == JIN)
 			jin(vals, dst, src0, src1);
-		else if (vals[1] == HLT)
+		else if (vals[2] == HLT)
 			break;	//halt	
 		vals[0]++;	//pc++; 
 	}
@@ -102,7 +111,7 @@ int main(int argc, char *argv[]) {
 	//close files
 	if (fclose(memin_p) == EOF || fclose(memout_p) == EOF || fclose(trace_p) == EOF) {
 		printf("Error: failed opening file. \n");}
-	free_mem(&output_arr);//free alocated memory
+	free_mem(&output_arr, &vals);//free alocated memory
 	return 0;
 }
 
@@ -116,27 +125,9 @@ int main(int argc, char *argv[]) {
  *
  * @return - void.
  */
-void alloc_mem(char ***output_arr) {
-	int i;
+//void alloc_mem(char **output_arr) {
 
-	if (((*output_arr) = (char**)malloc(MAX_NUM_OF_LINES * sizeof(char*))) == NULL) {
-		printf("Error: failed allocationg memory. \n");
-		exit(1);
-	}
-	for (i = 0; i < MAX_NUM_OF_LINES; i++) {
-		if (((*output_arr)[i] = (char*)malloc((COMMAND_LEN + 2) * sizeof(char))) == NULL) {
-			printf("Error: failed allocationg memory. \n");
-			exit(1);
-		}
-	}
-
-	/*initialize output_arr values*/
-	for (i = 0; i < MAX_NUM_OF_LINES; i++) {
-		memset((*output_arr)[i], '0', COMMAND_LEN);
-		(*output_arr)[i][COMMAND_LEN] = '\n';
-		(*output_arr)[i][COMMAND_LEN + 1] = '\0';
-	}
-}
+//}
 
 /** memin_to_outArr
  * -----------------
@@ -147,12 +138,85 @@ void alloc_mem(char ***output_arr) {
  *
  * @return - void.
  */
-void memin_to_outArr(FILE *memin_p, char ***output_arr) {
+void memin_to_outArr(FILE *memin_p, long int **output_arr) {
 	int i = 0;
-	while (fgets((*output_arr)[i], COMMAND_LEN + 2, memin_p) != NULL) {
+
+	while (i < MAX_NUM_OF_LINES && fscanf(memin_p, "%x", &((*output_arr)[i])) != EOF)
 		i++;
-	}
 	return;
+}
+
+void print_trace(long int *vals, FILE *trace_p, int dst, int src0, int src1) {
+	char* opcode_str;
+
+	switch (vals[2]) {
+	case ADD: opcode_str = "ADD";
+		break;
+	case SUB: opcode_str = "SUB";
+		break;
+	case LSF: opcode_str = "LSF";
+		break;
+	case RSF: opcode_str = "RSF";
+		break;
+	case AND: opcode_str = "AND";
+		break;
+	case OR: opcode_str = "OR";
+		break;
+	case XOR: opcode_str = "XOR";
+		break;
+	case LHI: opcode_str = "LHI";
+		break;
+	case LD: opcode_str = "LD";
+		break;
+	case ST: opcode_str = "ST";
+		break;
+	case JLT: opcode_str = "JLT";
+		break;
+	case JLE: opcode_str = "JLE";
+		break;
+	case JEQ: opcode_str = "JEQ";
+		break;
+	case JNE: opcode_str = "JNE";
+		break;
+	case JIN: opcode_str = "JIN";
+		break;
+	case HLT: opcode_str = "HLT";
+		break;
+	}
+	// print trace values
+	fprintf(trace_p, "--- instruction %i (%04X) @ PC %i (%04X) -----------------------------------------------------------\n",
+		vals[0], vals[0], vals[0], vals[0]);
+	fprintf(trace_p, "pc = %04x, inst = %08x, opcode = %01x (%s), ", vals[0], vals[1], vals[2], opcode_str);
+
+
+	fprintf(trace_p, "dst = %08X, src0 =  %08X, src1 =  %08X, immediate =  %08X\n", vals[3], vals[4], vals[5], vals[6]);
+	fprintf(trace_p, "r[0] = %08X r[1] =  %08X r[2] =  %08X r[3] =  %08X\n r[4] = %08X r[5] = %08X r[6] = %08X r[7] = %08X\n\n",
+		vals[7], vals[8], vals[9], vals[10], vals[11], vals[12], vals[13], vals[14]);
+
+	switch (vals[2]) {
+	case ADD: case SUB: case LSF: case RSF: case AND: case OR: case XOR: case LHI:
+		fprintf(trace_p, ">>>> EXEC: R[%i] = %i %s %i <<<<\n\n", dst, vals[src0], opcode_str, vals[src1]);
+		break;
+	case LD:
+		fprintf(trace_p, ">>>> EXEC: R[%i] = MEM[%i] = %08i <<<<\n\n", dst, vals[src1], vals[IMM_OFFSET_IN_VALS]);
+		break;
+	case ST:
+		fprintf(trace_p, ">>>> EXEC: MEM[%i] = R[%i] = %08x <<<<\n\n", vals[src1], src0, vals[src0]);
+		break;
+	case JLT:
+		fprintf(trace_p, ">>>> EXEC: %s %i, %i, %i <<<<\n\n", opcode_str, vals[src0], vals[src1], vals[IMM_OFFSET_IN_VALS]);
+		break;
+	case JLE: case JEQ: case JNE:
+		fprintf(trace_p, ">>>> EXEC: %s %i, %i, %i <<<<\n\n", opcode_str, vals[src0], vals[src1], vals[0]);
+		break;
+	case JIN:
+		fprintf(trace_p, ">>>> EXEC: %s %i, %i, %i <<<<\n\n", opcode_str, vals[src0], vals[src1], vals[IMM_OFFSET_IN_VALS]);
+		break;
+	case HLT:
+		fprintf(trace_p, ">>>> EXEC: HALT at PC %04x<<<<\n", vals[0]);
+		break;
+	//default:
+	}
 }
 
 
@@ -166,38 +230,37 @@ void memin_to_outArr(FILE *memin_p, char ***output_arr) {
 
  * @return - void.
  */
-void get_command_values(int *dst, int *src0, int *src1, long int vals, char output_arr, int pc) {
- int curr_instruction;
+void get_command_values(int *dst, int *src0, int *src1, int **vals, long int *output_arr, int pc) {
+	int curr_instruction;
 
- //convert instruction from memory to hex
- curr_instruction = strtoul(output_arr[pc], NULL, 16);// vals[1] is hex encoding of the current instruction.
- (*vals)[1] = (long int)curr_instruction;// vals[1] is hex encoding of the current instruction.
+	//convert instruction from memory to hex
+	(*vals)[1] = output_arr[pc];// vals[1] is hex encoding of the current instruction.
 
- //extract opcode
- (*vals)[2] = curr_instruction & 0x3E000000;
- (*vals)[2] = (*vals)[2] >> 0x19;
- //extract dst
- *dst = curr_instruction & 0x01c00000;
- *dst = *dst >> 0x16;
- //extract src0
- *src0 = curr_instruction & 0x00380000;
- *src0 = *src0 >> 0x13;
- //extract src1
- *src1 = curr_instruction & 0x00070000;
- *src1 = *src1 >> 0x10;
- //extract immediate
- (*vals)[6] = curr_instruction & 0x0000ffff; //copy value of immidiate to it's position in vals array
+	//extract opcode
+	(*vals)[2] = (*vals)[1] & 0x3E000000;
+	(*vals)[2] = (*vals)[2] >> 0x19;
+	//extract dst
+	*dst = (*vals)[1] & 0x01c00000;
+	*dst = *dst >> 0x16;
+	//extract src0
+	*src0 = (*vals)[1] & 0x00380000;
+	*src0 = *src0 >> 0x13;
+	//extract src1
+	*src1 = (*vals)[1] & 0x00070000;
+	*src1 = *src1 >> 0x10;
+	//extract immediate
+	(*vals)[6] = (*vals)[1] & 0x0000ffff; //copy value of immidiate to it's position in vals array
 
- //adjust register offset in case of using immediate
- if (*src0 == 1) { *src0 = -1; } //correct the register offset to be the immidiate offset in "vals" array
- if (*src1 == 1) { *src1 = -1; } //correct the register offset to be the immidiate offset in "vals" array
+	//adjust register offset in case of using immediate
+	if (*src0 == 1) { *src0 = -1; } //correct the register offset to be the immidiate offset in "vals" array
+	if (*src1 == 1) { *src1 = -1; } //correct the register offset to be the immidiate offset in "vals" array
 }
 
 /** add
  * -----
  * Computes addition of two integers and a constant.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs, rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the addition computation.
  *
@@ -215,7 +278,7 @@ void add(long int vals[], int dst, int src0, int src1) {
  * -----
  * Computes subtruction of two integers and a constant.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -231,7 +294,7 @@ void sub(long int vals[], int dst, int src0, int src1) {
  * -----
  * Computes left shift of src0 of src1 places.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -247,7 +310,7 @@ void lsf(long int vals[], int dst, int src0, int src1) {
  * -----
  * Computes right shift of src1 of src0 places.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -263,7 +326,7 @@ void rsf(long int vals[], int dst, int src0, int src1) {
  * -----
  * Computes bitwise and of two integers and a constant.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -279,7 +342,7 @@ void and(long int vals[], int dst, int src0, int src1) {
  * -----
  * Computes bitwise or of two integers and a constant.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -295,7 +358,7 @@ void or(long int vals[], int dst, int src0, int src1) {
  * -----
  * Computes bitwise xor of two integers and a constant.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -311,7 +374,7 @@ void xor(long int vals[], int dst, int src0, int src1) {
  * -----
  * Computes bitwise xor of two integers and a constant.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -327,7 +390,7 @@ void lhi(long int vals[], int dst, int src0, int src1) {
  * -----
  * Computes left shift of src0 of src1 places.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -338,15 +401,15 @@ void jlt(long int vals[], int dst, int src0, int src1) {
 		return;
 	}
 	if(vals[src0 + REGS_OFFSET_IN_VALS] < vals[src1 + REGS_OFFSET_IN_VALS]){
-	vals[7 + REGS_OFFSET_IN_VALS]=vals[0]
-	vals[0] = (vals[imm + REGS_OFFSET_IN_VALS] & 65535)-1;
+		vals[7 + REGS_OFFSET_IN_VALS] = vals[0];
+		vals[0] = (vals[REGS_OFFSET_IN_VALS] & 65535)-1;
 	}
 }
 /** JLE
  * -----
  * Computes right shift of src1 of src0 places.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -357,15 +420,15 @@ void jle(long int vals[], int dst, int src0, int src1) {
 		return;
 	}
 	if(vals[src0 + REGS_OFFSET_IN_VALS] <= vals[src1 + REGS_OFFSET_IN_VALS]){
-	vals[7 + REGS_OFFSET_IN_VALS]=vals[0]
-	vals[0] = (vals[imm + REGS_OFFSET_IN_VALS] & 65535)-1;
+		vals[7 + REGS_OFFSET_IN_VALS] = vals[0];
+		vals[0] = (vals[REGS_OFFSET_IN_VALS] & 65535)-1;
 	}
 }
 /** JEQ
  * -----
  * Computes bitwise and of two integers and a constant.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -376,15 +439,15 @@ void jeq(long int vals[], int dst, int src0, int src1) {
 		return;
 	}
 	if(vals[src0 + REGS_OFFSET_IN_VALS] == vals[src1 + REGS_OFFSET_IN_VALS]){
-	vals[7 + REGS_OFFSET_IN_VALS]=vals[0]
-	vals[0] = (vals[imm + REGS_OFFSET_IN_VALS] & 65535)-1;
+		vals[7 + REGS_OFFSET_IN_VALS] = vals[0];
+		vals[0] = (vals[REGS_OFFSET_IN_VALS] & 65535)-1;
 	}
 }
 /** JNE
  * -----
  * Computes bitwise and of two integers and a constant.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -395,15 +458,15 @@ void jne(long int vals[], int dst, int src0, int src1) {
 		return;
 	}
 	if(vals[src0 + REGS_OFFSET_IN_VALS] != vals[src1 + REGS_OFFSET_IN_VALS]){
-	vals[7 + REGS_OFFSET_IN_VALS]=vals[0]
-	vals[0] = (vals[imm + REGS_OFFSET_IN_VALS] & 65535)-1;
+		vals[7 + REGS_OFFSET_IN_VALS] = vals[0];
+		vals[0] = (vals[REGS_OFFSET_IN_VALS] & 65535)-1;
 	}
 }
 /** JIN
  * -----
  * Computes bitwise and of two integers and a constant.
  *
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
  * @param int imm - constant used in the subtruction computation.
  *
@@ -413,8 +476,8 @@ void jin(long int vals[], int dst, int src0, int src1) {
 	if (dst == 0 || dst == 1) { //dont change the zero register
 		return;
 	}
-	vals[7 + REGS_OFFSET_IN_VALS]=vals[0]
-	vals[0] = vals[src0 + REGS_OFFSET_IN_VALS]
+	vals[7 + REGS_OFFSET_IN_VALS] = vals[0];
+	vals[0] = vals[src0 + REGS_OFFSET_IN_VALS];
 }
 
 /** print_to_files
@@ -424,28 +487,23 @@ void jin(long int vals[], int dst, int src0, int src1) {
  * @params FILE *count_p, *regout_p, *memout_p - Pointers to files to be written to.
  * @param char **output_arr - 2 dimentional array with final memory image.
  * @param int command_cnt - number of command executed.
- * @param long int *vals - Array containing: pc, current command coding, and register values.
+ * @param int *vals - Array containing: pc, current command coding, and register values.
 
  * @return - void.
  */
-void print_to_files(FILE *memout_p, char **output_arr, long int *vals) {
+void print_to_files(FILE *memout_p, long int *output_arr, int *vals) {
 	int i = 0, last_ind = 0;
-	size_t vals_len = sizeof(vals) / sizeof(vals[0]);
 
 	// find the last memory index
 	for (i = MAX_NUM_OF_LINES - 1; i >= 0; i--) {
-		if (strncmp(output_arr[i], "00000000", COMMAND_LEN) != 0) {
+		if (output_arr[i] == 0) {
 			last_ind = i;
 			break;
 		}
 	}
 	// print memout file. 
 	for (i = 0; i <= last_ind; i++) {
-		if (output_arr[i][0] == '\0') {
-			strncpy(output_arr[i], "00000000", COMMAND_LEN);
-		}
-		output_arr[i][COMMAND_LEN] = '\n';
-		if (fprintf(memout_p, "%s", output_arr[i]) < 0) {
+		if (fprintf(memout_p, "%08x\n", output_arr[i]) < 0) {
 			printf("Error: failed writing to file 'memout.txt'. \n");
 		}
 	}
@@ -461,17 +519,8 @@ void print_to_files(FILE *memout_p, char **output_arr, long int *vals) {
  *
  * @return - void.
  */
-void free_mem(char ***output_arr) {
-	int i;
-
-	if ((*output_arr) != NULL) {
-		for (i = 0; i < MAX_NUM_OF_LINES; i++) {
-			if ((*output_arr)[i] != NULL) {
-				free((*output_arr)[i]);
-			}
-
-		}
-		free(*output_arr);
-	}
+void free_mem(long int **output_arr, long int **vals) {
+	free(*output_arr);
+	free(*vals);
 	return;
 }
