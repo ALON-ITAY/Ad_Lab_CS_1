@@ -28,9 +28,9 @@
 int main(int argc, char * argv[]);
 
 //void alloc_mem(char ***output_arr);
-void memin_to_outArr(FILE *memin_p, long int **output_arr);
+int memin_to_outArr(FILE *memin_p, long int **output_arr);
 void get_command_values(int *dst, int *src0, int *src1, int **vals, long int *output_arr, int pc);
-void print_trace(long int *vals, FILE *trace_p, int dst, int src0, int src1);
+void print_trace(long int *vals, long int *output_arr, FILE *trace_p, int dst, int src0, int src1);
 void add(long int vals[], int dst, int src0, int src1);
 void sub(long int vals[], int dst, int src0, int src1);
 void and(long int vals[], int dst, int src0, int src1);
@@ -63,13 +63,13 @@ int main(int argc, char *argv[]) {
 	if ((memin_p = fopen(argv[1], "r")) == NULL || (memout_p = fopen("sram_out.txt", "w")) == NULL
 		 || (trace_p = fopen("trace.txt", "w")) == NULL ){	printf("Error: failed opening file. \n");}
 
-	//alloc_mem(&output_arr); //alocate space for output array
-	memin_to_outArr(memin_p, &output_arr); //copy contents of memin to memout_arr
+	int LINES_IN_PROG = memin_to_outArr(memin_p, &output_arr); //copy contents of memin to memout_arr
+	fprintf(trace_p, "program %s loaded, %d lines\n\n", argv[1], LINES_IN_PROG);
 
 	while (1) {
 		pc = vals[0];
 		get_command_values(&dst, &src0, &src1, &vals, output_arr, pc);// get curr command feilds values.
-		print_trace(vals, trace_p, dst, src0, src1);
+		print_trace(vals, output_arr, trace_p, dst, src0, src1);
 		//exectute command
 		if (vals[2] == ADD)
 			add(vals, dst, src0, src1);
@@ -138,15 +138,15 @@ int main(int argc, char *argv[]) {
  *
  * @return - void.
  */
-void memin_to_outArr(FILE *memin_p, long int **output_arr) {
-	int i = 0;
+int memin_to_outArr(FILE *memin_p, long int **output_arr) {
+	int line = 0;
 
-	while (i < MAX_NUM_OF_LINES && fscanf(memin_p, "%x", &((*output_arr)[i])) != EOF)
-		i++;
-	return;
+	while (line < MAX_NUM_OF_LINES && fscanf(memin_p, "%x", &((*output_arr)[line])) != EOF)
+		line++;
+	return line;
 }
 
-void print_trace(long int *vals, FILE *trace_p, int dst, int src0, int src1) {
+void print_trace(long int *vals, long int *output_arr, FILE *trace_p, int dst, int src0, int src1) {
 	char* opcode_str;
 
 	switch (vals[2]) {
@@ -184,33 +184,30 @@ void print_trace(long int *vals, FILE *trace_p, int dst, int src0, int src1) {
 		break;
 	}
 	// print trace values
-	fprintf(trace_p, "--- instruction %i (%04X) @ PC %i (%04X) -----------------------------------------------------------\n",
+	fprintf(trace_p, "--- instruction %i (%04x) @ PC %i (%04x) -----------------------------------------------------------\n",
 		vals[0], vals[0], vals[0], vals[0]);
-	fprintf(trace_p, "pc = %04x, inst = %08x, opcode = %01x (%s), ", vals[0], vals[1], vals[2], opcode_str);
+	fprintf(trace_p, "pc = %04d, inst = %08x, opcode = %01d (%s), ", vals[0], vals[1], vals[2], opcode_str);
 
 
-	fprintf(trace_p, "dst = %08X, src0 =  %08X, src1 =  %08X, immediate =  %08X\n", vals[3], vals[4], vals[5], vals[6]);
-	fprintf(trace_p, "r[0] = %08X r[1] =  %08X r[2] =  %08X r[3] =  %08X\n r[4] = %08X r[5] = %08X r[6] = %08X r[7] = %08X\n\n",
+	fprintf(trace_p, "dst = %i, src0 = %i, src1 = %i, immediate = %08x\n", vals[3], vals[4], vals[5], vals[6]);
+	fprintf(trace_p, "r[0] = %08x r[1] = %08x r[2] = %08x r[3] = %08x \nr[4] = %08x r[5] = %08x r[6] = %08x r[7] = %08x \n\n",
 		vals[7], vals[8], vals[9], vals[10], vals[11], vals[12], vals[13], vals[14]);
 
 	switch (vals[2]) {
 	case ADD: case SUB: case LSF: case RSF: case AND: case OR: case XOR: case LHI:
-		fprintf(trace_p, ">>>> EXEC: R[%i] = %i %s %i <<<<\n\n", dst, vals[src0], opcode_str, vals[src1]);
+		fprintf(trace_p, ">>>> EXEC: R[%i] = %i %s %i <<<<\n\n", dst, vals[REGS_OFFSET_IN_VALS+src0], opcode_str, vals[REGS_OFFSET_IN_VALS+src1]);
 		break;
 	case LD:
-		fprintf(trace_p, ">>>> EXEC: R[%i] = MEM[%i] = %08i <<<<\n\n", dst, vals[src1], vals[IMM_OFFSET_IN_VALS]);
+		fprintf(trace_p, ">>>> EXEC: R[%i] = MEM[%i] = %08i <<<<\n\n", dst, vals[REGS_OFFSET_IN_VALS+src1], output_arr[vals[REGS_OFFSET_IN_VALS + src1]]);
 		break;
 	case ST:
-		fprintf(trace_p, ">>>> EXEC: MEM[%i] = R[%i] = %08x <<<<\n\n", vals[src1], src0, vals[src0]);
+		fprintf(trace_p, ">>>> EXEC: MEM[%i] = R[%i] = %08x <<<<\n\n", vals[REGS_OFFSET_IN_VALS+src1], src0, vals[REGS_OFFSET_IN_VALS+src0]);
 		break;
-	case JLT:
-		fprintf(trace_p, ">>>> EXEC: %s %i, %i, %i <<<<\n\n", opcode_str, vals[src0], vals[src1], vals[IMM_OFFSET_IN_VALS]);
-		break;
-	case JLE: case JEQ: case JNE:
-		fprintf(trace_p, ">>>> EXEC: %s %i, %i, %i <<<<\n\n", opcode_str, vals[src0], vals[src1], vals[0]);
+	case JLE: case JEQ: case JNE: case JLT:
+		fprintf(trace_p, ">>>> EXEC: %s %i, %i, %i <<<<\n\n", opcode_str, vals[REGS_OFFSET_IN_VALS+src0], vals[REGS_OFFSET_IN_VALS+src1], vals[0]+1);
 		break;
 	case JIN:
-		fprintf(trace_p, ">>>> EXEC: %s %i, %i, %i <<<<\n\n", opcode_str, vals[src0], vals[src1], vals[IMM_OFFSET_IN_VALS]);
+		fprintf(trace_p, ">>>> EXEC: %s %i, %i, %i <<<<\n\n", opcode_str, vals[REGS_OFFSET_IN_VALS+src0], vals[REGS_OFFSET_IN_VALS+src1], vals[IMM_OFFSET_IN_VALS]);
 		break;
 	case HLT:
 		fprintf(trace_p, ">>>> EXEC: HALT at PC %04x<<<<\n", vals[0]);
@@ -242,14 +239,18 @@ void get_command_values(int *dst, int *src0, int *src1, int **vals, long int *ou
 	//extract dst
 	*dst = (*vals)[1] & 0x01c00000;
 	*dst = *dst >> 0x16;
+	(*vals)[3] = *dst;
 	//extract src0
 	*src0 = (*vals)[1] & 0x00380000;
 	*src0 = *src0 >> 0x13;
+	(*vals)[4] = *src0;
 	//extract src1
 	*src1 = (*vals)[1] & 0x00070000;
 	*src1 = *src1 >> 0x10;
+	(*vals)[5] = *src1;
 	//extract immediate
-	(*vals)[6] = (*vals)[1] & 0x0000ffff; //copy value of immidiate to it's position in vals array
+	(*vals)[REGS_OFFSET_IN_VALS+1] = (*vals)[1] & 0x0000ffff; //reg1 is immediate
+	(*vals)[6] = (*vals)[REGS_OFFSET_IN_VALS + 1]; //copy value of immidiate to it's position in vals array
 
 	//adjust register offset in case of using immediate
 	if (*src0 == 1) { *src0 = -1; } //correct the register offset to be the immidiate offset in "vals" array
