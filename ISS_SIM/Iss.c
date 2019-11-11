@@ -86,11 +86,11 @@ int main(int argc, char *argv[]) {
 		else if (vals[2] == XOR)
 			xor(vals, dst, src0, src1);
 		else if (vals[2] ==LHI)
-			lhi(vals, dst, src0, src1);/*
+			lhi(vals, dst, src0, src1);
 		else if (vals[2] == LD)
-			jal(imm, &memout_p, vals);
+			ld(vals, dst, src0, src1,&output_arr);
 		else if (vals[2] == ST)
-			lw(rd, rs, imm, &output_arr, vals);*/
+			st(vals, dst, src0, src1,&output_arr);
 		else if (vals[2] == JLT)
 			jlt(vals, dst, src0, src1);
 		else if (vals[2] == JLE)
@@ -386,6 +386,46 @@ void lhi(long int vals[], int dst, int src0, int src1) {
 		return;
 	}
 	vals[dst + REGS_OFFSET_IN_VALS] = (vals[dst + REGS_OFFSET_IN_VALS]& 0x0000ffff)|((vals[src0 + REGS_OFFSET_IN_VALS] | vals[src1 + REGS_OFFSET_IN_VALS])<<0x10);
+}
+/** LD
+ * -----
+ * Computes bitwise xor of two integers and a constant.
+ *
+ * @param int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void ld(long int vals[], int dst, int src0, int src1,long int ** output_arr) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	char* tempmem;
+	strcpy(tempmem, output_arr[vals[src1 + REGS_OFFSET_IN_VALS]]);
+	vals[dst + REGS_OFFSET_IN_VALS] = (int)strtol(tempmem,NUL,16);
+	free(tempmem);
+	
+}
+
+/** ST
+ * -----
+ * Computes bitwise xor of two integers and a constant.
+ *
+ * @param int *vals - Array containing: pc, current command coding, and register values.
+ * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
+ * @param int imm - constant used in the subtruction computation.
+ *
+ * @return - void.
+ */
+void st(long int vals[], int dst, int src0, int src1,long int ** output_arr) {
+	if (dst == 0 || dst == 1) { //dont change the zero register
+		return;
+	}
+	char tempmem2[9];
+	sprintf(tempmem2,"%0x8" ,vals[src0 + REGS_OFFSET_IN_VALS]);
+	strcpy(tempmem2, output_arr[vals[src1 + REGS_OFFSET_IN_VALS]]);
+	
 }
 /** JLT
  * -----
