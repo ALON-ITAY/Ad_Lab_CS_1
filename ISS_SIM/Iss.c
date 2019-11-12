@@ -36,6 +36,8 @@ void sub(long int vals[], int dst, int src0, int src1);
 void and(long int vals[], int dst, int src0, int src1);
 void or (long int vals[], int dst, int src0, int src1);
 void xor(long int vals[], int dst, int src0, int src1);
+void ld(long int *vals, int src0, int src1, long int *output_arr);
+void st(long int *vals, int src0, int src1, long int *output_arr);
 void jeq(long int vals[], int dst, int src0, int src1);
 void jin(long int vals[], int dst, int src0, int src1);
 void jlt(long int vals[], int dst, int src0, int src1);
@@ -88,9 +90,9 @@ int main(int argc, char *argv[]) {
 		else if (vals[2] ==LHI)
 			lhi(vals, dst, src0, src1);
 		else if (vals[2] == LD)
-			ld(vals, dst, src0, src1,&output_arr);
+			ld(vals, src0, src1, output_arr);
 		else if (vals[2] == ST)
-			st(vals, dst, src0, src1,&output_arr);
+			st(vals, src0, src1, output_arr);
 		else if (vals[2] == JLT)
 			jlt(vals, dst, src0, src1);
 		else if (vals[2] == JLE)
@@ -384,15 +386,12 @@ void lhi(long int vals[], int dst, int src0, int src1) {
  *
  * @return - void.
  */
-void ld(long int vals[], int dst, int src0, int src1,long int ** output_arr) {
-	if (dst == 0 || dst == 1) { //dont change the zero register
+void ld(long int *vals, int src0, int src1, long int *output_arr) {
+	if (src0 == 0) { //dont change the zero register
 		return;
 	}
-	char* tempmem;
-	strcpy(tempmem, output_arr[vals[src1 + REGS_OFFSET_IN_VALS]]);
-	vals[dst + REGS_OFFSET_IN_VALS] = (int)strtol(tempmem,NUL,16);
-	free(tempmem);
-	
+
+	vals[src0 + REGS_OFFSET_IN_VALS] = output_arr[src1 + REGS_OFFSET_IN_VALS];
 }
 
 /** ST
@@ -405,14 +404,8 @@ void ld(long int vals[], int dst, int src0, int src1,long int ** output_arr) {
  *
  * @return - void.
  */
-void st(long int vals[], int dst, int src0, int src1,long int ** output_arr) {
-	if (dst == 0 || dst == 1) { //dont change the zero register
-		return;
-	}
-	char tempmem2[9];
-	sprintf(tempmem2,"%0x8" ,vals[src0 + REGS_OFFSET_IN_VALS]);
-	strcpy(tempmem2, output_arr[vals[src1 + REGS_OFFSET_IN_VALS]]);
-	
+void st(long int vals[], int src0, int src1, long int *output_arr) {
+	output_arr[src1 + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS];	
 }
 /** JLT
  * -----
