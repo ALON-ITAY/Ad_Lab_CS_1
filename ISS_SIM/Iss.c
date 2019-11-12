@@ -277,9 +277,8 @@ void get_command_values(int *dst, int *src0, int *src1, int **vals, long int *ou
  * -----
  * Computes addition of two integers and a constant.
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs, rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the addition computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
@@ -287,7 +286,7 @@ void add(long int vals[], int dst, int src0, int src1) {
 	if (dst == 0 || dst == 1) { //dont change the zero register
 		return;
 	}
-	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] + vals[src1 + REGS_OFFSET_IN_VALS];
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] + vals[src1 + REGS_OFFSET_IN_VALS]; /*R[dst]=R[src0] + R[src1]*/
 }
 
 
@@ -295,9 +294,8 @@ void add(long int vals[], int dst, int src0, int src1) {
  * -----
  * Computes subtruction of two integers and a constant.
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
@@ -305,15 +303,14 @@ void sub(long int vals[], int dst, int src0, int src1) {
 	if (dst == 0 || dst == 1) { //dont change the zero register
 		return;
 	}
-	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] - vals[src1 + REGS_OFFSET_IN_VALS];
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] - vals[src1 + REGS_OFFSET_IN_VALS]; /*R[dst]=R[src0] - R[src1]*/
 }
 /** LSF
  * -----
  * Computes left shift of src0 of src1 places.
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
@@ -321,16 +318,14 @@ void lsf(long int vals[], int dst, int src0, int src1) {
 	if (dst == 0 || dst == 1) { //dont change the zero register
 		return;
 	}
-	vals[dst + REGS_OFFSET_IN_VALS] = vals[src1 + REGS_OFFSET_IN_VALS] << vals[src0 + REGS_OFFSET_IN_VALS];
-	printf("%d\n", vals[dst + REGS_OFFSET_IN_VALS]);
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src1 + REGS_OFFSET_IN_VALS] << vals[src0 + REGS_OFFSET_IN_VALS];/*R[dst]=lsf(R[src1],R[src0])*/
 }
 /** RSF
  * -----
  * Computes right shift of src1 of src0 places.
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
@@ -338,15 +333,14 @@ void rsf(long int vals[], int dst, int src0, int src1) {
 	if (dst == 0 || dst == 1) { //dont change the zero register
 		return;
 	}
-	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] >> vals[src1 + REGS_OFFSET_IN_VALS];
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] >> vals[src1 + REGS_OFFSET_IN_VALS]; /*R[dst]=rsf(R[src0],R[src1])*/
 }
 /** and
  * -----
  * Computes bitwise and of two integers and a constant.
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
@@ -354,15 +348,14 @@ void and(long int vals[], int dst, int src0, int src1) {
 	if (dst == 0 || dst == 1) { //dont change the zero register
 		return;
 	}
-	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] & vals[src1 + REGS_OFFSET_IN_VALS];
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] & vals[src1 + REGS_OFFSET_IN_VALS]; /*R[dst]=R[src0] AND R[src1]*/
 }
 /** or
  * -----
  * Computes bitwise or of two integers and a constant.
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
@@ -370,15 +363,14 @@ void or(long int vals[], int dst, int src0, int src1) {
 	if (dst == 0 || dst == 1) { //dont change the zero register
 		return;
 	}
-	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] | vals[src1 + REGS_OFFSET_IN_VALS];
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] | vals[src1 + REGS_OFFSET_IN_VALS]; /*R[dst]=R[src0] OR R[src1]*/
 }
 /** xor
  * -----
  * Computes bitwise xor of two integers and a constant.
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
@@ -386,15 +378,14 @@ void xor(long int vals[], int dst, int src0, int src1) {
 	if (dst == 0 || dst == 1) { //dont change the zero register
 		return;
 	}
-	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] ^ vals[src1 + REGS_OFFSET_IN_VALS];
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] ^ vals[src1 + REGS_OFFSET_IN_VALS];/*R[dst]=R[src0] XOR R[src1]*/
 }
 /** LHI
  * -----
  * Loads the 16 lowest bits of the immediate into the 16 highst bits of the dst register.
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
@@ -402,15 +393,15 @@ void lhi(long int vals[], int dst, int src0, int src1) {
 	if (dst == 0 || dst == 1) { //dont change the zero register
 		return;
 	}
-	vals[dst + REGS_OFFSET_IN_VALS] = (vals[dst + REGS_OFFSET_IN_VALS]& 0x0000ffff)|((vals[src0 + REGS_OFFSET_IN_VALS] | vals[src1 + REGS_OFFSET_IN_VALS])<<0x10);
+	vals[dst + REGS_OFFSET_IN_VALS] = (vals[dst + REGS_OFFSET_IN_VALS]& 0x0000ffff)|((vals[src0 + REGS_OFFSET_IN_VALS] | vals[src1 + REGS_OFFSET_IN_VALS])<<0x10); /*R[dst][31:16]=imm[31:16]*/
 }
 /** LD
  * -----
  * Loads memory content at address specified by R[src1].
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
+ * @param long int *output_arr - Array containing the memory of the program that we will output.
  *
  * @return - void.
  */
@@ -419,104 +410,103 @@ void ld(long int *vals, int dst, int src1, long int *output_arr) {
 		return;
 	}
 
-	vals[dst + REGS_OFFSET_IN_VALS] = output_arr[vals[src1 + REGS_OFFSET_IN_VALS]];
+	vals[dst + REGS_OFFSET_IN_VALS] = output_arr[vals[src1 + REGS_OFFSET_IN_VALS]];/*R[dst]=MEM[R[src1]]*/
 }
 
 /** ST
  * -----
  * Writes R[src0] to memory at address R[src1].
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
+ * @param long int *output_arr - Array containing the memory of the program that we will output.
  *
  * @return - void.
  */
 void st(long int *vals, int src0, int src1, long int *output_arr) {
-	output_arr[vals[src1 + REGS_OFFSET_IN_VALS]] = vals[src0 + REGS_OFFSET_IN_VALS];	
+	output_arr[vals[src1 + REGS_OFFSET_IN_VALS]] = vals[src0 + REGS_OFFSET_IN_VALS];/*MEM[R[src1]]=R[src0]*/	
 }
 /** JLT
  * -----
- * jumps to immediate[15:0] if R[src0]<RR[src1].
+ * jumps to immediate[15:0] if R[src0]<R[src1].
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
 void jlt(long int vals[], int dst, int src0, int src1) {
 
-	if(vals[src0 + REGS_OFFSET_IN_VALS] < vals[src1 + REGS_OFFSET_IN_VALS]){
-		vals[7 + REGS_OFFSET_IN_VALS] = vals[0];
-		vals[0] = (vals[IMM_OFFSET_IN_VALS] & 65535)-1;
+	if(vals[src0 + REGS_OFFSET_IN_VALS] < vals[src1 + REGS_OFFSET_IN_VALS]){/*if r[src0]<R[src1]*/
+		vals[7 + REGS_OFFSET_IN_VALS] = vals[0]; /*store the current pc in R[7]*/
+		vals[0] = (vals[IMM_OFFSET_IN_VALS] & 65535)-1; /*pc=imm[15:0]-1 becuase we later increment it so we subtract 1
+		to jump to the right value of pc at the end of the execution of the comand*/
 	}
 }
 /** JLE
  * -----
- * jumps to immediate[15:0] if R[src0]<=RR[src1].
+ * jumps to immediate[15:0] if R[src0]<=R[src1].
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
 void jle(long int vals[], int dst, int src0, int src1) {
 
-	if(vals[src0 + REGS_OFFSET_IN_VALS] <= vals[src1 + REGS_OFFSET_IN_VALS]){
-		vals[7 + REGS_OFFSET_IN_VALS] = vals[0];
-		vals[0] = (vals[IMM_OFFSET_IN_VALS] & 65535)-1;
+	if(vals[src0 + REGS_OFFSET_IN_VALS] <= vals[src1 + REGS_OFFSET_IN_VALS]){/*if r[src0]<=R[src1]*/
+		vals[7 + REGS_OFFSET_IN_VALS] = vals[0]; /*store the current pc in R[7]*/
+		vals[0] = (vals[IMM_OFFSET_IN_VALS] & 65535)-1; /*pc=imm[15:0]-1 becuase we later increment it so we subtract 1
+		to jump to the right value of pc at the end of the execution of the comand*/
 	}
 }
 /** JEQ
  * -----
- * jumps to immediate[15:0] if R[src0]==RR[src1].
+ * jumps to immediate[15:0] if R[src0]==R[src1].
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
 void jeq(long int vals[], int dst, int src0, int src1) {
 
-	if(vals[src0 + REGS_OFFSET_IN_VALS] == vals[src1 + REGS_OFFSET_IN_VALS]){
-		vals[7 + REGS_OFFSET_IN_VALS] = vals[0];
-		vals[0] = (vals[IMM_OFFSET_IN_VALS] & 65535)-1;
+	if(vals[src0 + REGS_OFFSET_IN_VALS] == vals[src1 + REGS_OFFSET_IN_VALS]){/*if r[src0]==R[src1]*/
+		vals[7 + REGS_OFFSET_IN_VALS] = vals[0]; /*store the current pc in R[7]*/
+		vals[0] = (vals[IMM_OFFSET_IN_VALS] & 65535)-1; /*pc=imm[15:0]-1 becuase we later increment it so we subtract 1
+		to jump to the right value of pc at the end of the execution of the comand*/
 	}
 }
 /** JNE
  * -----
- * jumps to immediate[15:0] if R[src0]!=RR[src1].
+ * jumps to immediate[15:0] if R[src0]!=R[src1].
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
 void jne(long int vals[], int dst, int src0, int src1) {
 
-	if(vals[src0 + REGS_OFFSET_IN_VALS] != vals[src1 + REGS_OFFSET_IN_VALS]){
-		vals[7 + REGS_OFFSET_IN_VALS] = vals[0];
-		vals[0] = (vals[IMM_OFFSET_IN_VALS] & 65535)-1;
+	if(vals[src0 + REGS_OFFSET_IN_VALS] != vals[src1 + REGS_OFFSET_IN_VALS]){/*if r[src0]!=R[src1]*/
+		vals[7 + REGS_OFFSET_IN_VALS] = vals[0]; /*store the current pc in R[7]*/
+		vals[0] = (vals[IMM_OFFSET_IN_VALS] & 65535)-1; /*pc=imm[15:0]-1 becuase we later increment it so we subtract 1
+		to jump to the right value of pc at the end of the execution of the comand*/
 	}
 }
 /** JIN
  * -----
  * jumps to immediate[15:0].
  *
- * @param int *vals - Array containing: pc, current command coding, and register values.
- * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
- * @param int imm - constant used in the subtruction computation.
+ * @param long int vals[] - Array containing: pc, current command coding, and register values.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
  *
  * @return - void.
  */
 void jin(long int vals[], int dst, int src0, int src1) {
 
-	vals[7 + REGS_OFFSET_IN_VALS] = vals[0];
-	vals[0] = vals[src0 + REGS_OFFSET_IN_VALS];
+	vals[7 + REGS_OFFSET_IN_VALS] = vals[0]; /*store the current pc in R[src7]*/
+	vals[0] = vals[src0 + REGS_OFFSET_IN_VALS]-1; /*pc=R[src0]*/
 }
 
 /** print_to_files
