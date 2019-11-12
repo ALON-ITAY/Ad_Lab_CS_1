@@ -28,8 +28,8 @@
 int main(int argc, char * argv[]);
 
 
-int memin_to_outArr(FILE *memin_p, long int **output_arr);
-void get_command_values(int *dst, int *src0, int *src1, int **vals, long int *output_arr, int pc);
+int memin_to_outArr(FILE *memin_p, long int *output_arr);
+void get_command_values(int *dst, int *src0, int *src1, int *vals, long int *output_arr, int pc);
 void print_trace(long int *vals, long int *output_arr, FILE *trace_p, int dst, int src0, int src1, int inst_cnt);
 void print_jump_exec_to_trace(FILE* trace_p, long int *vals, long int *output_arr, int dst, int src0, int src1);
 void add(long int vals[], int dst, int src0, int src1);
@@ -37,8 +37,8 @@ void sub(long int vals[], int dst, int src0, int src1);
 void and(long int vals[], int dst, int src0, int src1);
 void or (long int vals[], int dst, int src0, int src1);
 void xor(long int vals[], int dst, int src0, int src1);
-void ld(long int *vals, int dst, int src1, long int *output_arr);
-void st(long int *vals, int src0, int src1, long int *output_arr);
+void ld(long int vals[], int dst, int src1, long int *output_arr);
+void st(long int vals[], int src0, int src1, long int *output_arr);
 void jeq(long int vals[], int dst, int src0, int src1);
 void jin(long int vals[], int dst, int src0, int src1);
 void jlt(long int vals[], int dst, int src0, int src1);
@@ -48,7 +48,7 @@ void lhi(long int vals[], int dst, int src0, int src1);
 void lsf(long int vals[], int dst, int src0, int src1);
 void rsf(long int vals[], int dst, int src0, int src1);
 void print_to_files(FILE *memout_p, FILE *trace_p, long int *output_arr, int *vals, int inst_cnt);
-void free_mem(long int **output_arr, long int **vals);
+void free_mem(long int *output_arr, long int *vals);
 
 int main(int argc, char *argv[]) {
 
@@ -67,12 +67,12 @@ int main(int argc, char *argv[]) {
 		printf("Error: failed opening file. \n"); exit(1);
 	}
 
-	int LINES_IN_PROG = memin_to_outArr(memin_p, &output_arr); //copy contents of memin to memout_arr
+	int LINES_IN_PROG = memin_to_outArr(memin_p, output_arr); //copy contents of memin to memout_arr
 	fprintf(trace_p, "program %s loaded, %d lines\n\n", argv[1], LINES_IN_PROG);
 
 	while (1) {
 		pc = vals[0];
-		get_command_values(&dst, &src0, &src1, &vals, output_arr, pc);// get curr command feilds values.
+		get_command_values(&dst, &src0, &src1, vals, output_arr, pc);// get curr command feilds values.
 		print_trace(vals, output_arr, trace_p, dst, src0, src1, inst_cnt);
 		//execute command
 		if (vals[2] == ADD)
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 	//close files
 	if (fclose(memin_p) == EOF || fclose(memout_p) == EOF || fclose(trace_p) == EOF) {
 		printf("Error: failed closing file. \n");}
-	free_mem(&output_arr, &vals);//free alocated memory
+	free_mem(output_arr, vals);//free alocated memory
 	return 0;
 }
 
@@ -129,18 +129,31 @@ int main(int argc, char *argv[]) {
  * Copies content of memin text file - to the 2 dimentional output_arr, line by line.
  *
  * @param char *memin_p - A pointer to the memin.txt file.
- * @param char ***output_arr - A pointer to a 2 dimentional array to be written into.
+ * @param long int **output_arr - A pointer to the output data array to be written into.
  *
  * @return - void.
  */
-int memin_to_outArr(FILE *memin_p, long int **output_arr) {
+int memin_to_outArr(FILE *memin_p, long int *output_arr) {
 	int line = 0;
 
-	while (line < MAX_NUM_OF_LINES && fscanf(memin_p, "%x", &((*output_arr)[line])) != EOF)
+	while (line < MAX_NUM_OF_LINES && fscanf(memin_p, "%x", &(output_arr[line])) != EOF)
 		line++;
 	return line;
 }
 
+
+/** print_trace
+ * --------------
+ * Prints program trace.
+ *
+ * @param long int *vals -  array for values of: pc, instruction, opcode, dst, src0, src1, immediate, registers.
+ * @param long int *output_arr - A pointer to the output data array to be written into.
+ * @param FILE *trace_p - pointer to trace output file.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
+ * @param int inst_cnt - instruction count.
+ *
+ * @return - void.
+ */
 void print_trace(long int *vals, long int *output_arr, FILE *trace_p, int dst, int src0, int src1, int inst_cnt) {
 	char* opcode_str;
 
@@ -206,6 +219,17 @@ void print_trace(long int *vals, long int *output_arr, FILE *trace_p, int dst, i
 }
 
 
+/** print_jump_exec_to_trace
+ * --------------------------
+ * Prints program "EXEC" trace for branch commands.
+ *
+ * @param FILE *trace_p - pointer to trace output file.
+ * @param long int *vals -  array for values of: pc, instruction, opcode, dst, src0, src1, immediate, registers.
+ * @param long int *output_arr - A pointer to the output data array to be written into.
+ * @params int dst,src0,src1 - variables indicating registers index (index in vals array + REGS_OFFSET_IN_VALS).
+ *
+ * @return - void.
+ */
 void print_jump_exec_to_trace(FILE* trace_p, long int *vals, long int *output_arr, int dst, int src0, int src1) {
 
 	char* opcode_str;
@@ -234,39 +258,40 @@ void print_jump_exec_to_trace(FILE* trace_p, long int *vals, long int *output_ar
 
 /** get_command_values
  * --------------------
- * Insert values of current command feilds into variables.
+ * Insert values of current command fields into variables.
  *
- * @params int *rd, *rs, *rm, *imm - Pointers to variables to be written with command feilds.
- * @param char **output_arr - 2 dimentional array with current memory image.
+ * @params int *dst, *src0, *src1 - Pointers to variables to be written with command feilds.
+ * @param long int *vals -  array for values of: pc, instruction, opcode, dst, src0, src1, immediate, registers.
+ * @param long int *output_arr - A pointer to the output data array to be written into.
  * @param int pc - program counter.
 
  * @return - void.
  */
-void get_command_values(int *dst, int *src0, int *src1, int **vals, long int *output_arr, int pc) {
+void get_command_values(int *dst, int *src0, int *src1, int *vals, long int *output_arr, int pc) {
 	int curr_instruction;
 
 	//convert instruction from memory to hex
-	(*vals)[1] = output_arr[pc];// vals[1] is hex encoding of the current instruction.
+	vals[1] = output_arr[pc];// vals[1] is hex encoding of the current instruction.
 
 	//extract opcode
-	(*vals)[2] = (*vals)[1] & 0x3E000000;
-	(*vals)[2] = (*vals)[2] >> 0x19;
+	vals[2] = vals[1] & 0x3E000000;
+	vals[2] = vals[2] >> 0x19;
 	//extract dst
-	*dst = (*vals)[1] & 0x01c00000;
+	*dst = vals[1] & 0x01c00000;
 	*dst = *dst >> 0x16;
-	(*vals)[3] = *dst;
+	vals[3] = *dst;
 	//extract src0
-	*src0 = (*vals)[1] & 0x00380000;
+	*src0 = vals[1] & 0x00380000;
 	*src0 = *src0 >> 0x13;
-	(*vals)[4] = *src0;
+	vals[4] = *src0;
 	//extract src1
-	*src1 = (*vals)[1] & 0x00070000;
+	*src1 = vals[1] & 0x00070000;
 	*src1 = *src1 >> 0x10;
-	(*vals)[5] = *src1;
+	vals[5] = *src1;
 	//extract immediate
-	(*vals)[REGS_OFFSET_IN_VALS+1] = (*vals)[1] & 0x0000ffff; //reg1 is immediate
-	(*vals)[REGS_OFFSET_IN_VALS + 1] = ((*vals)[REGS_OFFSET_IN_VALS + 1] << 16) >> 16;
-	(*vals)[IMM_OFFSET_IN_VALS] = (*vals)[REGS_OFFSET_IN_VALS + 1]; //copy value of immidiate to it's position in vals array
+	vals[REGS_OFFSET_IN_VALS+1] = vals[1] & 0x0000ffff; //reg1 is immediate
+	vals[REGS_OFFSET_IN_VALS + 1] = (vals[REGS_OFFSET_IN_VALS + 1] << 16) >> 16;
+	vals[IMM_OFFSET_IN_VALS] = vals[REGS_OFFSET_IN_VALS + 1]; //copy value of immidiate to it's position in vals array
 
 	//adjust register offset in case of using immediate
 	if (*src0 == 1) { *src0 = -1; } //correct the register offset to be the immidiate offset in "vals" array
@@ -405,7 +430,7 @@ void lhi(long int vals[], int dst, int src0, int src1) {
  *
  * @return - void.
  */
-void ld(long int *vals, int dst, int src1, long int *output_arr) {
+void ld(long int vals[], int dst, int src1, long int *output_arr) {
 	if (dst == 0) { //dont change the zero register
 		return;
 	}
@@ -423,7 +448,7 @@ void ld(long int *vals, int dst, int src1, long int *output_arr) {
  *
  * @return - void.
  */
-void st(long int *vals, int src0, int src1, long int *output_arr) {
+void st(long int vals[], int src0, int src1, long int *output_arr) {
 	output_arr[vals[src1 + REGS_OFFSET_IN_VALS]] = vals[src0 + REGS_OFFSET_IN_VALS];/*MEM[R[src1]]=R[src0]*/	
 }
 /** JLT
@@ -513,10 +538,10 @@ void jin(long int vals[], int dst, int src0, int src1) {
  * ----------------
  * Print data to files at end of simolator run.
  *
- * @params FILE *count_p, *regout_p, *memout_p - Pointers to files to be written to.
- * @param char **output_arr - 2 dimentional array with final memory image.
- * @param int command_cnt - number of command executed.
- * @param int *vals - Array containing: pc, current command coding, and register values.
+ * @params FILE *memout_p, *trace_p - Pointers to files to be written into.
+ * @param long int *output_arr - A pointer to the output data array to be written into.
+ * @param long int *vals -  array for values of: pc, instruction, opcode, dst, src0, src1, immediate, registers.
+ * @param int inst_cnt - total number of commands executed.
 
  * @return - void.
  */
@@ -539,12 +564,13 @@ void print_to_files(FILE *memout_p, FILE *trace_p, long int *output_arr, int *va
  * ----------
  * Frees dynamic memory previously allocated for the simulator run.
  *
- * @param char ***output_arr - A pointer to a 2 dimentional array to be freed.
+ * @param long int *output_arr - A pointer to the output data array to be written into.
+ * @param long int *vals -  array for values of: pc, instruction, opcode, dst, src0, src1, immediate, registers.
  *
  * @return - void.
  */
-void free_mem(long int **output_arr, long int **vals) {
-	free(*output_arr);
-	free(*vals);
+void free_mem(long int *output_arr, long int *vals) {
+	free(output_arr);
+	free(vals);
 	return;
 }
