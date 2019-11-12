@@ -390,7 +390,7 @@ void xor(long int vals[], int dst, int src0, int src1) {
 }
 /** LHI
  * -----
- * Computes bitwise xor of two integers and a constant.
+ * Loads the 16 lowest bits of the immediate into the 16 highst bits of the dst register.
  *
  * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
@@ -406,7 +406,7 @@ void lhi(long int vals[], int dst, int src0, int src1) {
 }
 /** LD
  * -----
- * Computes bitwise xor of two integers and a constant.
+ * Loads memory content at address specified by R[src1].
  *
  * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
@@ -424,7 +424,7 @@ void ld(long int *vals, int dst, int src1, long int *output_arr) {
 
 /** ST
  * -----
- * Computes bitwise xor of two integers and a constant.
+ * Writes R[src0] to memory at address R[src1].
  *
  * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
@@ -437,7 +437,7 @@ void st(long int *vals, int src0, int src1, long int *output_arr) {
 }
 /** JLT
  * -----
- * Computes left shift of src0 of src1 places.
+ * jumps to immediate[15:0] if R[src0]<RR[src1].
  *
  * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
@@ -454,7 +454,7 @@ void jlt(long int vals[], int dst, int src0, int src1) {
 }
 /** JLE
  * -----
- * Computes right shift of src1 of src0 places.
+ * jumps to immediate[15:0] if R[src0]<=RR[src1].
  *
  * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
@@ -471,7 +471,7 @@ void jle(long int vals[], int dst, int src0, int src1) {
 }
 /** JEQ
  * -----
- * Computes bitwise and of two integers and a constant.
+ * jumps to immediate[15:0] if R[src0]==RR[src1].
  *
  * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
@@ -488,7 +488,7 @@ void jeq(long int vals[], int dst, int src0, int src1) {
 }
 /** JNE
  * -----
- * Computes bitwise and of two integers and a constant.
+ * jumps to immediate[15:0] if R[src0]!=RR[src1].
  *
  * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
@@ -505,7 +505,7 @@ void jne(long int vals[], int dst, int src0, int src1) {
 }
 /** JIN
  * -----
- * Computes bitwise and of two integers and a constant.
+ * jumps to immediate[15:0].
  *
  * @param int *vals - Array containing: pc, current command coding, and register values.
  * @params int rd, rs,rt - variables indicating registers index (index in vals array + 2).
