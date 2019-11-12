@@ -27,7 +27,7 @@
 
 int main(int argc, char * argv[]);
 
-//void alloc_mem(char ***output_arr);
+
 int memin_to_outArr(FILE *memin_p, long int **output_arr);
 void get_command_values(int *dst, int *src0, int *src1, int **vals, long int *output_arr, int pc);
 void print_trace(long int *vals, long int *output_arr, FILE *trace_p, int dst, int src0, int src1);
@@ -53,10 +53,10 @@ int main(int argc, char *argv[]) {
 	FILE *memin_p = NULL, *memout_p = NULL, *trace_p = NULL; //file pointers
 	long int *output_arr = (long int*) calloc(MAX_NUM_OF_LINES, sizeof(long int)); //array of memout values line by line
 	long int *vals = (long int*) calloc(15, sizeof(long int));// initialze hex array for values of: pc, instruction, opcode, dst, src0, src1, immediate, registers.
-	int dst, src0, src1, imm; //command feilds
-	int i = 0, pc = 0;
+	int dst, src0, src1, imm; //command fields
+	int pc = 0;
 
-
+	if (output_arr == NULL || vals == NULL) { printf("Error: failed allocating memory. \n"); exit(1); }
 	assert(argc == 2);//assert 2 input file paths
 
 	//open files
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 		pc = vals[0];
 		get_command_values(&dst, &src0, &src1, &vals, output_arr, pc);// get curr command feilds values.
 		print_trace(vals, output_arr, trace_p, dst, src0, src1);
-		//exectute command
+		//execute command
 		if (vals[2] == ADD)
 			add(vals, dst, src0, src1);
 		else if (vals[2] == SUB)
@@ -110,24 +110,11 @@ int main(int argc, char *argv[]) {
 
 	//close files
 	if (fclose(memin_p) == EOF || fclose(memout_p) == EOF || fclose(trace_p) == EOF) {
-		printf("Error: failed opening file. \n");}
+		printf("Error: failed closing file. \n");}
 	free_mem(&output_arr, &vals);//free alocated memory
 	return 0;
 }
 
-
-/** alloc_mem
- * -----------
- * Allocates dynamic memory for the simulator run.
- * Initialzes values in allocated space.
- *
- * @param char ***output_arr - A pointer to a 2 dimentional array which will contain output memory state line by line.
- *
- * @return - void.
- */
-//void alloc_mem(char **output_arr) {
-
-//}
 
 /** memin_to_outArr
  * -----------------
