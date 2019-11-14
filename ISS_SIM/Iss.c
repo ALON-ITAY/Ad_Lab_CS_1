@@ -1,3 +1,6 @@
+#define _CRT_SECURE_NO_WARNINGS 1 
+#define _WINSOCK_DEPRECATED_NO_WARNINGS 1 
+
 #define MAX_NUM_OF_LINES 65536
 #define COMMAND_LEN 8
 #define REGS_OFFSET_IN_VALS 7
@@ -29,9 +32,9 @@ int main(int argc, char * argv[]);
 
 
 int memin_to_outArr(FILE *memin_p, long int *output_arr);
-void get_command_values(int *dst, int *src0, int *src1, int *vals, long int *output_arr, int pc);
+void get_command_values(int *dst, int *src0, int *src1, long int *vals, long int *output_arr, int pc);
 void print_trace(long int *vals, long int *output_arr, FILE *trace_p, int dst, int src0, int src1, int inst_cnt);
-void print_jump_exec_to_trace(FILE* trace_p, long int *vals, long int *output_arr, int dst, int src0, int src1);
+void print_jump_exec_to_trace(FILE* trace_p, long int *vals, int src0, int src1);
 void add(long int vals[], int dst, int src0, int src1);
 void sub(long int vals[], int dst, int src0, int src1);
 void and(long int vals[], int dst, int src0, int src1);
@@ -39,15 +42,15 @@ void or (long int vals[], int dst, int src0, int src1);
 void xor(long int vals[], int dst, int src0, int src1);
 void ld(long int vals[], int dst, int src1, long int *output_arr);
 void st(long int vals[], int src0, int src1, long int *output_arr);
-void jeq(long int vals[], int dst, int src0, int src1);
-void jin(long int vals[], int dst, int src0, int src1);
-void jlt(long int vals[], int dst, int src0, int src1);
-void jle(long int vals[], int dst, int src0, int src1);
-void jne(long int vals[], int dst, int src0, int src1);
+void jeq(long int vals[], int src0, int src1);
+void jin(long int vals[], int src0);
+void jlt(long int vals[], int src0, int src1);
+void jle(long int vals[], int src0, int src1);
+void jne(long int vals[], int src0, int src1);
 void lhi(long int vals[], int dst, int src0, int src1);
 void lsf(long int vals[], int dst, int src0, int src1);
 void rsf(long int vals[], int dst, int src0, int src1);
-void print_to_files(FILE *memout_p, FILE *trace_p, long int *output_arr, int *vals, int inst_cnt);
+void print_to_files(FILE *memout_p, FILE *trace_p, long int *output_arr, long int *vals, int inst_cnt);
 void free_mem(long int *output_arr, long int *vals);
 
 int main(int argc, char *argv[]) {
@@ -55,7 +58,7 @@ int main(int argc, char *argv[]) {
 	FILE *memin_p = NULL, *memout_p = NULL, *trace_p = NULL; //file pointers
 	long int *output_arr = (long int*) calloc(MAX_NUM_OF_LINES, sizeof(long int)); //array of memout values line by line
 	long int *vals = (long int*) calloc(15, sizeof(long int));// initialze hex array for values of: pc, instruction, opcode, dst, src0, src1, immediate, registers.
-	int dst, src0, src1, imm; //command fields
+	int dst, src0, src1; //command fields
 	int pc = 0, inst_cnt = 0;
 
 	if (output_arr == NULL || vals == NULL) { printf("Error: failed allocating memory. \n"); exit(1); }
@@ -96,21 +99,21 @@ int main(int argc, char *argv[]) {
 		else if (vals[2] == ST)
 			st(vals, src0, src1, output_arr);
 		else if (vals[2] == JLT)
-			jlt(vals, dst, src0, src1);
+			jlt(vals, src0, src1);
 		else if (vals[2] == JLE)
-			jle(vals, dst, src0, src1);
+			jle(vals, src0, src1);
 		else if (vals[2] == JEQ)
-			jeq(vals, dst, src0, src1);
+			jeq(vals, src0, src1);
 		else if (vals[2] == JNE)
-			jne(vals, dst, src0, src1);
+			jne(vals, src0, src1);
 		else if (vals[2] == JIN)
-			jin(vals, dst, src0, src1);
+			jin(vals, src0);
 		else if (vals[2] == HLT){
 			inst_cnt++;
 			break;	//halt	
 		}
 		vals[0]++;	//pc++;
-		print_jump_exec_to_trace(trace_p, vals, output_arr, dst, src0, src1);
+		print_jump_exec_to_trace(trace_p, vals, src0, src1);
 		inst_cnt++;
 	}
 
@@ -136,7 +139,7 @@ int main(int argc, char *argv[]) {
 int memin_to_outArr(FILE *memin_p, long int *output_arr) {
 	int line = 0;
 
-	while (line < MAX_NUM_OF_LINES && fscanf(memin_p, "%x", &(output_arr[line])) != EOF)
+	while (line < MAX_NUM_OF_LINES && fscanf(memin_p, "%ld", &(output_arr[line])) != EOF)
 		line++;
 	return line;
 }
@@ -193,27 +196,27 @@ void print_trace(long int *vals, long int *output_arr, FILE *trace_p, int dst, i
 	default: opcode_str = "";
 	}
 	// print trace values
-	fprintf(trace_p, "--- instruction %i (%04x) @ PC %i (%04x) -----------------------------------------------------------\n",
+	fprintf(trace_p, "--- instruction %i (%04d) @ PC %ld (%04lx) -----------------------------------------------------------\n",
 		inst_cnt, inst_cnt, vals[0], vals[0]);
-	fprintf(trace_p, "pc = %04d, inst = %08x, opcode = %01d (%s), ", vals[0], vals[1], vals[2], opcode_str);
+	fprintf(trace_p, "pc = %04ld, inst = %08lx, opcode = %01lx (%s), ", vals[0], vals[1], vals[2], opcode_str);
 
 
-	fprintf(trace_p, "dst = %i, src0 = %i, src1 = %i, immediate = %08x\n", vals[3], vals[4], vals[5], vals[6]);
-	fprintf(trace_p, "r[0] = %08x r[1] = %08x r[2] = %08x r[3] = %08x \nr[4] = %08x r[5] = %08x r[6] = %08x r[7] = %08x \n\n",
+	fprintf(trace_p, "dst = %ld, src0 = %ld, src1 = %ld, immediate = %08lx\n", vals[3], vals[4], vals[5], vals[6]);
+	fprintf(trace_p, "r[0] = %08lx r[1] = %08lx r[2] = %08lx r[3] = %08lx \nr[4] = %08lx r[5] = %08lx r[6] = %08lx r[7] = %08lx \n\n",
 		vals[7], vals[8], vals[9], vals[10], vals[11], vals[12], vals[13], vals[14]);
 
 	switch (vals[2]) {
 	case ADD: case SUB: case LSF: case RSF: case AND: case OR: case XOR: case LHI:
-		fprintf(trace_p, ">>>> EXEC: R[%i] = %i %s %i <<<<\n\n", dst, vals[REGS_OFFSET_IN_VALS + src0], opcode_str, vals[REGS_OFFSET_IN_VALS + src1]);
+		fprintf(trace_p, ">>>> EXEC: R[%d] = %ld %s %ld <<<<\n\n", dst, vals[REGS_OFFSET_IN_VALS + src0], opcode_str, vals[REGS_OFFSET_IN_VALS + src1]);
 		break;
 	case LD:
-		fprintf(trace_p, ">>>> EXEC: R[%i] = MEM[%i] = %08x <<<<\n\n", dst, vals[REGS_OFFSET_IN_VALS + src1], output_arr[vals[REGS_OFFSET_IN_VALS + src1]]);
+		fprintf(trace_p, ">>>> EXEC: R[%d] = MEM[%ld] = %08lx <<<<\n\n", dst, vals[REGS_OFFSET_IN_VALS + src1], output_arr[vals[REGS_OFFSET_IN_VALS + src1]]);
 		break;
 	case ST:
-		fprintf(trace_p, ">>>> EXEC: MEM[%i] = R[%i] = %08x <<<<\n\n", vals[REGS_OFFSET_IN_VALS + src1], src0, vals[REGS_OFFSET_IN_VALS + src0]);
+		fprintf(trace_p, ">>>> EXEC: MEM[%ld] = R[%d] = %08lx <<<<\n\n", vals[REGS_OFFSET_IN_VALS + src1], src0, vals[REGS_OFFSET_IN_VALS + src0]);
 		break;
 	case HLT:
-		fprintf(trace_p, ">>>> EXEC: HALT at PC %04x<<<<\n", vals[0]);
+		fprintf(trace_p, ">>>> EXEC: HALT at PC %04lx<<<<\n", vals[0]);
 		break;
 	}
 }
@@ -230,7 +233,7 @@ void print_trace(long int *vals, long int *output_arr, FILE *trace_p, int dst, i
  *
  * @return - void.
  */
-void print_jump_exec_to_trace(FILE* trace_p, long int *vals, long int *output_arr, int dst, int src0, int src1) {
+void print_jump_exec_to_trace(FILE* trace_p, long int *vals, int src0, int src1) {
 
 	char* opcode_str;
 
@@ -250,7 +253,7 @@ void print_jump_exec_to_trace(FILE* trace_p, long int *vals, long int *output_ar
 
 	switch (vals[2]) {
 	case JLE: case JEQ: case JNE: case JLT: case JIN:
-		fprintf(trace_p, ">>>> EXEC: %s %i, %i, %i <<<<\n\n", opcode_str, vals[REGS_OFFSET_IN_VALS + src0], vals[REGS_OFFSET_IN_VALS + src1], vals[0]);
+		fprintf(trace_p, ">>>> EXEC: %s %ld, %ld, %ld <<<<\n\n", opcode_str, vals[REGS_OFFSET_IN_VALS + src0], vals[REGS_OFFSET_IN_VALS + src1], vals[0]);
 		break;
 	}
 }
@@ -267,8 +270,7 @@ void print_jump_exec_to_trace(FILE* trace_p, long int *vals, long int *output_ar
 
  * @return - void.
  */
-void get_command_values(int *dst, int *src0, int *src1, int *vals, long int *output_arr, int pc) {
-	int curr_instruction;
+void get_command_values(int *dst, int *src0, int *src1, long int *vals, long int *output_arr, int pc) {
 
 	//convert instruction from memory to hex
 	vals[1] = output_arr[pc];// vals[1] is hex encoding of the current instruction.
@@ -460,7 +462,7 @@ void st(long int vals[], int src0, int src1, long int *output_arr) {
  *
  * @return - void.
  */
-void jlt(long int vals[], int dst, int src0, int src1) {
+void jlt(long int vals[], int src0, int src1) {
 
 	if(vals[src0 + REGS_OFFSET_IN_VALS] < vals[src1 + REGS_OFFSET_IN_VALS]){/*if r[src0]<R[src1]*/
 		vals[7 + REGS_OFFSET_IN_VALS] = vals[0]; /*store the current pc in R[7]*/
@@ -477,7 +479,7 @@ void jlt(long int vals[], int dst, int src0, int src1) {
  *
  * @return - void.
  */
-void jle(long int vals[], int dst, int src0, int src1) {
+void jle(long int vals[], int src0, int src1) {
 
 	if(vals[src0 + REGS_OFFSET_IN_VALS] <= vals[src1 + REGS_OFFSET_IN_VALS]){/*if r[src0]<=R[src1]*/
 		vals[7 + REGS_OFFSET_IN_VALS] = vals[0]; /*store the current pc in R[7]*/
@@ -494,7 +496,7 @@ void jle(long int vals[], int dst, int src0, int src1) {
  *
  * @return - void.
  */
-void jeq(long int vals[], int dst, int src0, int src1) {
+void jeq(long int vals[], int src0, int src1) {
 
 	if(vals[src0 + REGS_OFFSET_IN_VALS] == vals[src1 + REGS_OFFSET_IN_VALS]){/*if r[src0]==R[src1]*/
 		vals[7 + REGS_OFFSET_IN_VALS] = vals[0]; /*store the current pc in R[7]*/
@@ -511,7 +513,7 @@ void jeq(long int vals[], int dst, int src0, int src1) {
  *
  * @return - void.
  */
-void jne(long int vals[], int dst, int src0, int src1) {
+void jne(long int vals[], int src0, int src1) {
 
 	if(vals[src0 + REGS_OFFSET_IN_VALS] != vals[src1 + REGS_OFFSET_IN_VALS]){/*if r[src0]!=R[src1]*/
 		vals[7 + REGS_OFFSET_IN_VALS] = vals[0]; /*store the current pc in R[7]*/
@@ -528,7 +530,7 @@ void jne(long int vals[], int dst, int src0, int src1) {
  *
  * @return - void.
  */
-void jin(long int vals[], int dst, int src0, int src1) {
+void jin(long int vals[], int src0) {
 
 	vals[7 + REGS_OFFSET_IN_VALS] = vals[0]; /*store the current pc in R[src7]*/
 	vals[0] = vals[src0 + REGS_OFFSET_IN_VALS]-1; /*pc=R[src0]*/
@@ -545,14 +547,14 @@ void jin(long int vals[], int dst, int src0, int src1) {
 
  * @return - void.
  */
-void print_to_files(FILE *memout_p, FILE *trace_p, long int *output_arr, int *vals, int inst_cnt) {
+void print_to_files(FILE *memout_p, FILE *trace_p, long int *output_arr, long int *vals, int inst_cnt) {
 	int i = 0;
 
-	fprintf(trace_p, "sim finished at pc %d, %d instructions", vals[0], inst_cnt);
+	fprintf(trace_p, "sim finished at pc %ld, %d instructions", vals[0], inst_cnt);
 
 	// print memout file. 
 	for (i = 0; i < MAX_NUM_OF_LINES; i++) {
-		if (fprintf(memout_p, "%08x\n", output_arr[i]) < 0) {
+		if (fprintf(memout_p, "%08lx\n", output_arr[i]) < 0) {
 			printf("Error: failed writing to file 'memout.txt'. \n");
 		}
 	}
