@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 int memin_to_outArr(FILE *memin_p, long int *output_arr) {
 	int line = 0;
 
-	while (line < MAX_NUM_OF_LINES && fscanf(memin_p, "%ld", &(output_arr[line])) != EOF)
+	while (line < MAX_NUM_OF_LINES && fscanf(memin_p, "%x",(long int) &(output_arr[line])) != EOF)
 		line++;
 	return line;
 }
@@ -345,7 +345,7 @@ void lsf(long int vals[], int dst, int src0, int src1) {
 	if (dst == 0 || dst == 1) { //dont change the zero register
 		return;
 	}
-	vals[dst + REGS_OFFSET_IN_VALS] = vals[src1 + REGS_OFFSET_IN_VALS] << vals[src0 + REGS_OFFSET_IN_VALS];/*R[dst]=lsf(R[src1],R[src0])*/
+	vals[dst + REGS_OFFSET_IN_VALS] = vals[src0 + REGS_OFFSET_IN_VALS] << vals[src1 + REGS_OFFSET_IN_VALS];/*R[dst]=lsf(R[src0],R[src1])*/
 }
 /** RSF
  * -----
