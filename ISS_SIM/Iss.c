@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 int memin_to_outArr(FILE *memin_p, long int *output_arr) {
 	int line = 0;
 
-	while (line < MAX_NUM_OF_LINES && fscanf(memin_p, "%08x",(long int) &(output_arr[line])) != EOF)
+	while (line < MAX_NUM_OF_LINES && fscanf(memin_p, "%08x",(unsigned int*) &(output_arr[line])) != EOF)
 		line++;
 	return line;
 }
@@ -196,9 +196,9 @@ void print_trace(long int *vals, long int *output_arr, FILE *trace_p, int dst, i
 	default: opcode_str = "";
 	}
 	// print trace values
-	fprintf(trace_p, "--- instruction %i (%04d) @ PC %ld (%04lx) -----------------------------------------------------------\n",
+	fprintf(trace_p, "--- instruction %i (%04x) @ PC %ld (%04lx) -----------------------------------------------------------\n",
 		inst_cnt, inst_cnt, vals[0], vals[0]);
-	fprintf(trace_p, "pc = %04ld, inst = %08lx, opcode = %01lx (%s), ", vals[0], vals[1], vals[2], opcode_str);
+	fprintf(trace_p, "pc = %04ld, inst = %08lx, opcode = %ld (%s), ", vals[0], vals[1], vals[2], opcode_str);
 
 
 	fprintf(trace_p, "dst = %ld, src0 = %ld, src1 = %ld, immediate = %08lx\n", vals[3], vals[4], vals[5], vals[6]);
@@ -538,7 +538,7 @@ void jin(long int vals[], int src0) {
 
 /** print_to_files
  * ----------------
- * Print data to files at end of simolator run.
+ * Print data to files at end of simulator run.
  *
  * @params FILE *memout_p, *trace_p - Pointers to files to be written into.
  * @param long int *output_arr - A pointer to the output data array to be written into.
@@ -548,12 +548,19 @@ void jin(long int vals[], int src0) {
  * @return - void.
  */
 void print_to_files(FILE *memout_p, FILE *trace_p, long int *output_arr, long int *vals, int inst_cnt) {
-	int i = 0;
+	int i = 0, max_mem_line = MAX_NUM_OF_LINES;
 
 	fprintf(trace_p, "sim finished at pc %ld, %d instructions", vals[0], inst_cnt);
+	
+	//find max_mem_line
+	for (i = MAX_NUM_OF_LINES-1; i>=0; i--) {
+		if (output_arr[i] == 0) {
+			max_mem_line;
+		}
+	}
 
 	// print memout file. 
-	for (i = 0; i < MAX_NUM_OF_LINES; i++) {
+	for (i = 0; i < max_mem_line; i++) {
 		if (fprintf(memout_p, "%08lx\n", output_arr[i]) < 0) {
 			printf("Error: failed writing to file 'memout.txt'. \n");
 		}
